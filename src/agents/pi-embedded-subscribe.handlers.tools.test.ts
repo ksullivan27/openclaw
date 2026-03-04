@@ -45,6 +45,7 @@ function createTestContext(): {
       messagingToolSentMediaUrls: [],
       messagingToolSentTargets: [],
       successfulCronAdds: 0,
+      assistantMessageIndex: 0,
     },
     shouldEmitToolResult: () => false,
     shouldEmitToolOutput: () => false,

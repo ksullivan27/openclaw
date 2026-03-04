@@ -78,6 +78,8 @@ export function subscribeEmbeddedPiSession(params: SubscribeEmbeddedPiSessionPar
     pendingMessagingTargets: new Map(),
     successfulCronAdds: 0,
     pendingMessagingMediaUrls: new Map(),
+    todosContinuationDepth: 0,
+    todosContinuationLastCompletedAt: undefined,
   };
   const usageTotals = {
     input: 0,
@@ -586,6 +588,8 @@ export function subscribeEmbeddedPiSession(params: SubscribeEmbeddedPiSessionPar
     pendingMessagingTargets.clear();
     state.successfulCronAdds = 0;
     state.pendingMessagingMediaUrls.clear();
+    state.todosContinuationDepth = 0;
+    state.todosContinuationLastCompletedAt = undefined;
     resetAssistantMessageState(0);
   };
 

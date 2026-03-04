@@ -77,6 +77,10 @@ export type EmbeddedPiSubscribeState = {
   successfulCronAdds: number;
   pendingMessagingMediaUrls: Map<string, string[]>;
   lastAssistant?: AgentMessage;
+
+  /** How many todos-continuation follow-ups have been queued so far. */
+  todosContinuationDepth: number;
+  todosContinuationLastCompletedAt?: string;
 };
 
 export type EmbeddedPiSubscribeContext = {
@@ -139,6 +143,7 @@ export type ToolHandlerParams = Pick<
   | "sessionKey"
   | "sessionId"
   | "agentId"
+  | "config"
 >;
 
 export type ToolHandlerState = Pick<
@@ -155,6 +160,7 @@ export type ToolHandlerState = Pick<
   | "messagingToolSentMediaUrls"
   | "messagingToolSentTargets"
   | "successfulCronAdds"
+  | "assistantMessageIndex"
 >;
 
 export type ToolHandlerContext = {

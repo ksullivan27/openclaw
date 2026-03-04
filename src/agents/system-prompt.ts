@@ -62,6 +62,22 @@ function buildMemorySection(params: {
   return lines;
 }
 
+function buildTodosSection(params: { isMinimal: boolean; availableTools: Set<string> }) {
+  if (!params.availableTools.has("todos")) {
+    return [];
+  }
+  return [
+    "## Task Tracking",
+    "You MUST use the `todos` tool to track your work:",
+    "- When you receive a task, create a todo list IMMEDIATELY with `todos(action=set, items=[...])`.",
+    "- Keep exactly one item `in_progress` at a time via `todos(action=start, id=N)`.",
+    "- Mark items done with `todos(action=complete, id=N)` as you finish each step.",
+    "- After context compaction or when resuming work, call `todos(action=list)` to recover your place.",
+    '- Be persistent and resourceful. If something fails, try alternative approaches before giving up. Only as an absolute last resort — after exhausting all options — call `todos(action=finish, reason="...")` to end.',
+    "",
+  ];
+}
+
 function buildUserIdentitySection(ownerLine: string | undefined, isMinimal: boolean) {
   if (!ownerLine || isMinimal) {
     return [];
@@ -267,6 +283,7 @@ export function buildAgentSystemPrompt(params: {
     subagents: "List, steer, or kill sub-agent runs for this requester session",
     session_status:
       "Show a /status-equivalent status card (usage + time + Reasoning/Verbose/Elevated); use for model-use questions (📊 session_status); optional per-session model override",
+    todos: "Track execution steps for the current task (session-scoped)",
     image: "Analyze an image with the configured image model",
   };
 
@@ -294,6 +311,7 @@ export function buildAgentSystemPrompt(params: {
     "sessions_send",
     "subagents",
     "session_status",
+    "todos",
     "image",
   ];
 
@@ -406,6 +424,7 @@ export function buildAgentSystemPrompt(params: {
     availableTools,
     citationsMode: params.memoryCitationsMode,
   });
+  const todosSection = buildTodosSection({ isMinimal, availableTools });
   const docsSection = buildDocsSection({
     docsPath: params.docsPath,
     isMinimal,
@@ -475,6 +494,7 @@ export function buildAgentSystemPrompt(params: {
     "If unsure, ask the user to run `openclaw help` (or `openclaw gateway --help`) and paste the output.",
     "",
     ...skillsSection,
+    ...todosSection,
     ...memorySection,
     // Skip self-update for subagent/none modes
     hasGateway && !isMinimal ? "## OpenClaw Self-Update" : "",

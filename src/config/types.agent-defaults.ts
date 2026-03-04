@@ -180,6 +180,20 @@ export type AgentDefaultsConfig = {
      * - trusted: trust project settings as-is
      */
     projectSettingsPolicy?: "trusted" | "sanitize" | "ignore";
+    /**
+     * When enabled, queue a follow-up prompt if the agent stops immediately after
+     * a messaging tool send, preventing premature exit mid-task.
+     */
+    messagingContinuation?: {
+      /** Enable messaging continuation (default: false). */
+      enabled?: boolean;
+      /** Max follow-up attempts before allowing the agent to stop (default: 3). */
+      maxDepth?: number;
+    };
+    todosContinuation?: {
+      enabled?: boolean;
+      maxDepth?: number;
+    };
   };
   /** Vector memory search configuration (per-agent overrides supported). */
   memorySearch?: MemorySearchConfig;

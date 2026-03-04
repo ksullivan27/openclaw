@@ -127,6 +127,20 @@ export const AgentDefaultsSchema = z
         projectSettingsPolicy: z
           .union([z.literal("trusted"), z.literal("sanitize"), z.literal("ignore")])
           .optional(),
+        messagingContinuation: z
+          .object({
+            enabled: z.boolean().optional(),
+            maxDepth: z.number().int().min(1).max(10).optional(),
+          })
+          .strict()
+          .optional(),
+        todosContinuation: z
+          .object({
+            enabled: z.boolean().optional(),
+            maxDepth: z.number().int().min(1).max(25).optional(),
+          })
+          .strict()
+          .optional(),
       })
       .strict()
       .optional(),

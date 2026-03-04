@@ -87,6 +87,7 @@ function createToolHandlerCtx() {
       messagingToolSentTargets: [] as unknown[],
       blockBuffer: "",
       successfulCronAdds: 0,
+      assistantMessageIndex: 0,
     },
     log: { debug: vi.fn(), warn: vi.fn() },
     flushBlockReplyBuffer: vi.fn(),

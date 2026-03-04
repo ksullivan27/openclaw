@@ -17,6 +17,7 @@ import {
   formatReasoningMessage,
   promoteThinkingTagsToBlocks,
 } from "./pi-embedded-utils.js";
+import { computeStats, getTodosState, isAllDone } from "./tools/todos-tool.js";
 
 const stripTrailingDirective = (text: string): string => {
   const openIndex = text.lastIndexOf("[[");
@@ -421,4 +422,51 @@ export function handleMessageEnd(
   ctx.state.lastStreamedAssistant = undefined;
   ctx.state.lastStreamedAssistantCleaned = undefined;
   ctx.state.reasoningStreamOpen = false;
+
+  // Todos continuation: if agent has incomplete todos and is stopping, keep it working.
+  const isAgentStopping = !(
+    assistantMessage.role === "assistant" &&
+    "stopReason" in assistantMessage &&
+    (assistantMessage as { stopReason?: string }).stopReason === "toolUse"
+  );
+
+  if (isAgentStopping) {
+    const todosConfig = ctx.params.config?.agents?.defaults?.embeddedPi?.todosContinuation;
+    if (todosConfig?.enabled) {
+      const sessionId = ctx.params.sessionId;
+      const todosState = sessionId ? getTodosState(sessionId) : undefined;
+      if (
+        todosState &&
+        !todosState.finished &&
+        todosState.items.length > 0 &&
+        !isAllDone(todosState.items)
+      ) {
+        // Reset depth when agent made progress (completed a todo since last check).
+        if (
+          todosState.lastCompletedAt &&
+          todosState.lastCompletedAt !== ctx.state.todosContinuationLastCompletedAt
+        ) {
+          ctx.state.todosContinuationDepth = 0;
+          ctx.state.todosContinuationLastCompletedAt = todosState.lastCompletedAt;
+        }
+
+        if (ctx.state.todosContinuationDepth < (todosConfig.maxDepth ?? 10)) {
+          const stats = computeStats(todosState.items);
+          const incomplete = stats.pending + stats.in_progress + stats.blocked;
+          ctx.state.todosContinuationDepth += 1;
+          const session = ctx.params.session;
+          ctx.log.warn(
+            `Todos continuation follow-up queued: depth=${ctx.state.todosContinuationDepth} incomplete=${incomplete}/${stats.total}`,
+          );
+          void session.followUp(
+            `[Todos continuation — ${incomplete} of ${stats.total} items incomplete. Continue working through your task list. If blocked, call todos(action=finish, reason="...") to end.]`,
+          );
+        } else {
+          ctx.log.warn(
+            `Todos continuation depth exhausted (${ctx.state.todosContinuationDepth}/${todosConfig.maxDepth ?? 10}) — allowing agent to stop`,
+          );
+        }
+      }
+    }
+  }
 }

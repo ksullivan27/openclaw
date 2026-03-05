@@ -424,11 +424,11 @@ export function handleMessageEnd(
   ctx.state.reasoningStreamOpen = false;
 
   // Todos continuation: if agent has incomplete todos and is stopping, keep it working.
-  const isAgentStopping = !(
-    assistantMessage.role === "assistant" &&
-    "stopReason" in assistantMessage &&
-    (assistantMessage as { stopReason?: string }).stopReason === "toolUse"
-  );
+  const stopReason =
+    assistantMessage.role === "assistant" && "stopReason" in assistantMessage
+      ? (assistantMessage as { stopReason?: string }).stopReason
+      : undefined;
+  const isAgentStopping = stopReason !== "toolUse";
 
   if (isAgentStopping) {
     const todosConfig = ctx.params.config?.agents?.defaults?.embeddedPi?.todosContinuation;
@@ -441,6 +441,18 @@ export function handleMessageEnd(
         todosState.items.length > 0 &&
         !isAllDone(todosState.items)
       ) {
+        // If the run was aborted (e.g. Discord queue timeout), session.followUp() won't work —
+        // the session is already torn down. Skip the followUp to avoid wasting a depth increment.
+        // The next user message will re-trigger work naturally.
+        if (stopReason === "aborted") {
+          const stats = computeStats(todosState.items);
+          const incomplete = stats.pending + stats.in_progress + stats.blocked;
+          ctx.log.warn(
+            `Todos continuation skipped (run aborted): ${incomplete}/${stats.total} items incomplete — increase eventQueue.listenerTimeout if this recurs`,
+          );
+          return;
+        }
+
         // Reset depth when agent made progress (completed a todo since last check).
         if (
           todosState.lastCompletedAt &&
